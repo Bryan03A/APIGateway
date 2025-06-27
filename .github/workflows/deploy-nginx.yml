@@ -1,0 +1,39 @@
+name: Deploy NGINX API Gateway
+
+on:
+  push:
+    paths:
+      - 'nginx.conf'        # Solo si cambia nginx.conf
+      - 'Dockerfile'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: |
+        docker build -t bfury0329/nginx-api-gateway:latest .
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: bfury0329
+        password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+    - name: Push Docker image
+      run: docker push bfury0329/nginx-api-gateway:latest
+
+    - name: SSH & deploy container on EC2 NginxAPIGateway
+      uses: appleboy/ssh-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          docker pull bfury0329/nginx-api-gateway:latest
+          docker rm -f nginx-api-gateway || true
+          docker run -d --name nginx-api-gateway -p 80:80 bfury0329/nginx-api-gateway:latest

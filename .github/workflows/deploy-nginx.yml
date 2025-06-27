@@ -34,6 +34,7 @@ jobs:
         username: ec2-user
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          docker login -u bfury0329 -p "${{ secrets.DOCKER_HUB_PASSWORD }}"
           docker pull bfury0329/nginx-api-gateway:latest
           docker rm -f nginx-api-gateway || true
           docker run -d --name nginx-api-gateway -p 80:80 bfury0329/nginx-api-gateway:latest
